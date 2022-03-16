@@ -1,75 +1,83 @@
-import React, { useEffect, useState, useRef } from 'react'
-import cx from 'classnames'
-import { push } from 'react-router-redux'
-import UISearch from '@santiment-network/ui/Search'
-import { track } from 'webkit/analytics'
-import Suggestions from './Suggestions'
-import { useCursorNavigation } from './navigation'
-import { addRecent } from './RecentsCategory'
-import { store } from '../../../redux'
-import styles from './index.module.scss'
+import React, { useEffect, useState, useRef } from "react";
+import cx from "classnames";
+import { push } from "react-router-redux";
+import UISearch from "@santiment-network/ui/Search";
+import { track } from "webkit/analytics";
+import Suggestions from "./Suggestions";
+import { useCursorNavigation } from "./navigation";
+import { addRecent } from "./RecentsCategory";
+import { store } from "../../../redux";
+import styles from "./index.module.scss";
 
-const EDITABLE_TAGS = new Set(['INPUT', 'TEXTAREA'])
+const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA"]);
 
-const Search = () => {
-  const inputRef = useRef()
-  const [isOpened, setIsOpened] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
+const Search = ({ isLP }) => {
+  const inputRef = useRef();
+  const [isOpened, setIsOpened] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const { onKeyDown, ...props } = useCursorNavigation(
     isOpened,
     onSuggestionSelect
-  )
+  );
 
   useEffect(() => {
-    if (!searchTerm) return
+    if (!searchTerm) return;
 
     const timer = setTimeout(
-      () => track.event('navbar_search', { value: searchTerm }),
+      () => track.event("navbar_search", { value: searchTerm }),
       500
-    )
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+    );
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
-    const input = inputRef.current
-    if (!input) return
+    const input = inputRef.current;
+    if (!input) return;
 
-    function onKeyPress (e) {
-      const { code, target } = e
+    function onKeyPress(e) {
+      const { code, target } = e;
 
       if (
-        code === 'Slash' &&
+        code === "Slash" &&
         !EDITABLE_TAGS.has(target.tagName) &&
         !target.isContentEditable
       ) {
-        e.preventDefault()
-        openSuggestions()
-        input.focus()
+        e.preventDefault();
+        openSuggestions();
+        input.focus();
       }
     }
 
-    window.addEventListener('keypress', onKeyPress)
-    return () => window.removeEventListener('keypress', onKeyPress)
-  }, [])
+    window.addEventListener("keypress", onKeyPress);
+    return () => window.removeEventListener("keypress", onKeyPress);
+  }, []);
 
-  function openSuggestions () {
-    setIsOpened(true)
+  function openSuggestions() {
+    setIsOpened(true);
   }
 
-  function closeSuggestions () {
-    setIsOpened(false)
+  function closeSuggestions() {
+    setIsOpened(false);
   }
 
-  function onSuggestionSelect (node, item, category) {
-    const href = node.getAttribute('href')
+  function onSuggestionSelect(node, item, category) {
+    const href = node.getAttribute("href");
 
-    addRecent(category, item)
-    closeSuggestions()
+    addRecent(category, item);
+    closeSuggestions();
 
-    if (href.startsWith('http')) {
-      window.location.href = href
+    if (isLP) {
+      if (href.startsWith("https://insights")) {
+        window.location.href = href;
+      } else {
+        window.location.href = `https://app.santiment.net${href}`;
+      }
     } else {
-      store.dispatch(push(href))
+      if (href.startsWith("http")) {
+        window.location.href = href;
+      } else {
+        store.dispatch(push(href));
+      }
     }
   }
 
@@ -78,8 +86,8 @@ const Search = () => {
       className={cx(styles.search, isOpened && styles.search_focused)}
       inputClassName={styles.input}
       forwardedRef={inputRef}
-      placeholder='Search for assets, trends, etc...'
-      autoComplete='off'
+      placeholder="Search for assets, trends, etc..."
+      autoComplete="off"
       onChange={v => setSearchTerm(v)}
       onClick={openSuggestions}
       onBlur={closeSuggestions}
@@ -92,7 +100,7 @@ const Search = () => {
         onSuggestionSelect={onSuggestionSelect}
       />
     </UISearch>
-  )
-}
+  );
+};
 
-export default Search
+export default Search;
