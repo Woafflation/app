@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import cx from "classnames";
 import { push } from "react-router-redux";
 import UISearch from "@santiment-network/ui/Search";
-import { track } from "webkit/analytics";
 import Suggestions from "./Suggestions";
 import { useCursorNavigation } from "./navigation";
 import { addRecent } from "./RecentsCategory";
@@ -11,7 +10,7 @@ import styles from "./index.module.scss";
 
 const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA"]);
 
-const Search = ({ isLP }) => {
+const Search = ({ className, classes, selectSuggestion }) => {
   const inputRef = useRef();
   const [isOpened, setIsOpened] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,10 +22,14 @@ const Search = ({ isLP }) => {
   useEffect(() => {
     if (!searchTerm) return;
 
-    const timer = setTimeout(
-      () => track.event("navbar_search", { value: searchTerm }),
-      500
-    );
+    const timer = setTimeout(() => {
+      import("webkit/analytics").then(({ track }) => {
+        if (track) {
+          track.event("navbar_search", { value: searchTerm });
+        }
+      });
+    }, 500);
+
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -66,12 +69,8 @@ const Search = ({ isLP }) => {
     addRecent(category, item);
     closeSuggestions();
 
-    if (isLP) {
-      if (href.startsWith("https://insights")) {
-        window.location.href = href;
-      } else {
-        window.location.href = `https://app.santiment.net${href}`;
-      }
+    if (selectSuggestion) {
+      selectSuggestion(href);
     } else {
       if (href.startsWith("http")) {
         window.location.href = href;
@@ -83,8 +82,13 @@ const Search = ({ isLP }) => {
 
   return (
     <UISearch
-      className={cx(styles.search, isOpened && styles.search_focused)}
-      inputClassName={styles.input}
+      className={cx(
+        styles.search,
+        isOpened && styles.search_focused,
+        className
+      )}
+      inputClassName={cx(styles.input, classes.input)}
+      iconClassName={classes.icon}
       forwardedRef={inputRef}
       placeholder="Search for assets, trends, etc..."
       autoComplete="off"
@@ -98,6 +102,7 @@ const Search = ({ isLP }) => {
         searchTerm={searchTerm}
         isOpened={isOpened}
         onSuggestionSelect={onSuggestionSelect}
+        className={classes.suggestions}
       />
     </UISearch>
   );
