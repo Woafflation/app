@@ -108,4 +108,8 @@ const Search = ({ className, classes, selectSuggestion }) => {
   );
 };
 
+Search.defaultProps = {
+  classes: {}
+};
+
 export default Search;
